@@ -25,6 +25,11 @@ Organism Cells are only found in organisms, and cannot exist on their own in the
 - Killer - Red, harms organisms in directly adjacent cells (besides itself).
 - Armor - Purple, negates the effects of killer cells.
 
+## Neural movement (NNUE)
+Every organism carries a small, heritable efficiently-updatable neural network (NNUE). For organisms with mover cells, the network observes a sparse 5x5 local view containing food, walls, its own body, other organisms, and map boundaries, plus hunger and damage state. It chooses whether to move up, down, left, right, or wait.
+
+The hidden-layer accumulator is updated only for sensory features that changed since the previous tick. Offspring receive a deep copy of the parent's network, and mutation events perturb both body genes and neural weights, allowing movement behavior to evolve through natural selection.
+
 ## Organisms
 Organisms are structures of cells.
 When an organism dies, every cell in the grid that was occupied by a cell in its body will be changed to food.

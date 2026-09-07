@@ -22,6 +22,10 @@ const Hyperparams = {
         this.moversCanProduce= false;
 
         this.instaKill= false;
+
+        this.nnueEnabled= true;
+        this.nnueWeightMutationProb= 0.03;
+        this.nnueWeightMutationMagnitude= 0.2;
     },
 
     // calculates the optimal ratio where a producer cell is most likely to produce 1 food in its lifespan * a scalar of my choice :)

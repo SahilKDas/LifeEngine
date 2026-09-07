@@ -5,6 +5,7 @@ const LocalCell = require("./Cell/LocalCell");
 const Neighbors = require("../Grid/Neighbors");
 const Hyperparams = require("../Hyperparameters");
 const Directions = require("./Directions");
+const NNUE = require("./NNUE");
 
 const directions = [[0,1],[0,-1],[1,0],[-1,0]]
 
@@ -29,6 +30,9 @@ class Organism {
         this.birth_distance = 4;
         if (parent != null) {
             this.inherit(parent);
+        }
+        else {
+            this.brain = new NNUE();
         }
     }
 
@@ -88,6 +92,7 @@ class Organism {
         this.move_range = parent.move_range;
         this.mutability = parent.mutability;
         this.birth_distance = parent.birth_distance;
+        this.brain = parent.brain.clone();
         for (var c of parent.cells){
             //deep copy parent cells
             this.addCell(c.type, c.loc_col, c.loc_row);
@@ -131,6 +136,7 @@ class Organism {
         } 
         if (Math.random() * 100 <= prob) { 
             org.mutate();
+            org.brain.mutate(Hyperparams.nnueWeightMutationProb, Hyperparams.nnueWeightMutationMagnitude);
         }
         
 
@@ -213,6 +219,11 @@ class Organism {
             return true;
         }
         return false;
+    }
+
+    chooseMovement() {
+        if (!Hyperparams.nnueEnabled) return this.direction;
+        return this.brain.chooseAction(this);
     }
 
     attemptRotate() {
@@ -327,10 +338,14 @@ class Organism {
             return this.living
         }
         if (this.is_mover) {
-            this.move_count++;
-            var moved = this.attemptMove();
-            if (this.move_count > this.move_range){
-                this.attemptRotate();
+            var action = this.chooseMovement();
+            if (action != NNUE.waitAction) {
+                this.direction = action;
+                this.move_count++;
+                this.attemptMove();
+                if (this.move_count > this.move_range){
+                    this.attemptRotate();
+                }
             }
         }
 
