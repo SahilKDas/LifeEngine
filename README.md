@@ -10,7 +10,7 @@ A modern rewrite of Life Engine: a browser-based evolutionary ecosystem where or
 - A C++17 core implements fast NNUE evaluation/training and a contiguous-memory world stepper.
 - The C++ trainer produces the initial browser model in public/trained-brain.json.
 - A C ABI and Emscripten CMake target are included for WebAssembly builds.
-- The interface uses a responsive light-red, red, and black design system.
+- The interface keeps the original blue, black, white, and teal visual identity in a responsive layout.
 
 ## Run the application
 
@@ -65,4 +65,4 @@ Two additional one-hot pairs encode hunger/reproduction readiness and damage. Ou
 
 ## Cell palette
 
-The ecosystem deliberately stays within the red family: pale rose food and producers, coral mouths, vivid red movers, deep-red killers, crimson armor, oxblood walls, and a near-black world.
+The original cell colors are preserved: green food, orange mouths, white producers, blue movers, red killers, purple armor, gray walls, and a dark-blue world.

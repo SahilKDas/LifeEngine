@@ -27,12 +27,12 @@ export interface Metrics {
 export const DIRECTIONS = [[0, -1], [0, 1], [-1, 0], [1, 0]] as const;
 
 export const CELL_COLORS: Record<CellType, string> = {
-  [CellType.Empty]: "#090506",
-  [CellType.Food]: "#fda4af",
-  [CellType.Wall]: "#3f1119",
-  [CellType.Mouth]: "#fb7185",
-  [CellType.Producer]: "#fecdd3",
-  [CellType.Mover]: "#ef4444",
-  [CellType.Killer]: "#7f1d1d",
-  [CellType.Armor]: "#be123c",
+  [CellType.Empty]: "#121d29",
+  [CellType.Food]: "green",
+  [CellType.Wall]: "gray",
+  [CellType.Mouth]: "orange",
+  [CellType.Producer]: "white",
+  [CellType.Mover]: "#3493eb",
+  [CellType.Killer]: "red",
+  [CellType.Armor]: "purple",
 };
