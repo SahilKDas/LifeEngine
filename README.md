@@ -1,81 +1,68 @@
-# The Life Engine
-The life engine is a cellular automaton designed to simulate the long term processes of biological evolution. It allows organisms to eat, reproduce, mutate, and adapt.
-Unlike genetic algorithms, the life engine does not manually select the most "fit" organism for some given task, but rather allows true natural selection to 
-run its course. Organisms that survive, successfully produce offspring, and out-compete their neighbors naturally propogate througout the environment.
+# Life Engine NNUE
 
-This is the second version of the [original evolution simulator](https://github.com/MaxRobinsonTheGreat/EvolutionSimulator), which I started in high school.
+A modern rewrite of Life Engine: a browser-based evolutionary ecosystem where organisms inherit body plans and sparse neural-network behavior.
 
+## What changed
 
-# Rules
-## The Environment
-The environment is a simple grid system made up of cells, which at every tick have a certain type. The environment is populated by organisms, which are structures of multiple cells.
+- Strict TypeScript replaces the original JavaScript, jQuery, and Webpack application.
+- Vite 8 provides the development server and optimized production build.
+- Vitest covers the TypeScript NNUE implementation.
+- A C++17 core implements fast NNUE evaluation/training and a contiguous-memory world stepper.
+- The C++ trainer produces the initial browser model in public/trained-brain.json.
+- A C ABI and Emscripten CMake target are included for WebAssembly builds.
+- The interface uses a responsive light-red, red, and black design system.
 
-## Cells
-A cell can be one of the following types.
-### Independent Cells
-Independent cells are not part of organisms. 
-- Empty - Dark blue, inert.
-- Food - Green, provides nourishment for organisms.
-- Wall - Gray, blocks organisms movement and reproduction.
-### Organism Cells
-Organism Cells are only found in organisms, and cannot exist on their own in the grid.
-- Mouth - Orange, eats food in directly adjacent cells.
-- Producer - White, randomly generates food in directly adjacent empty cells.
-- Mover - Light blue, allows the organism to move and rotate randomly.
-- Killer - Red, harms organisms in directly adjacent cells (besides itself).
-- Armor - Purple, negates the effects of killer cells.
+## Run the application
 
-## Neural movement (NNUE)
-Every organism carries a small, heritable efficiently-updatable neural network (NNUE). For organisms with mover cells, the network observes a sparse 5x5 local view containing food, walls, its own body, other organisms, and map boundaries, plus hunger and damage state. It chooses whether to move up, down, left, right, or wait.
+~~~sh
+npm install
+npm run dev
+~~~
 
-The hidden-layer accumulator is updated only for sensory features that changed since the previous tick. Offspring receive a deep copy of the parent's network, and mutation events perturb both body genes and neural weights, allowing movement behavior to evolve through natural selection.
+Production verification:
 
-## Organisms
-Organisms are structures of cells.
-When an organism dies, every cell in the grid that was occupied by a cell in its body will be changed to food.
-Their lifespan is calculated by multiplying the number of cells they have by the hyperparameter `Lifespan Multiplier`. They will survive for that many ticks unless killed by another organism.
-When touched by a killer cell, and organism will take damage. Once it has taken as much damage as it has cells in its body, it will die. If the hyperparameter `One touch kill` is on, an organism will immediatly die when touched by a killer cell.
+~~~sh
+npm test
+npm run build
+~~~
 
-## Reproduction
-Once an organism has eaten as much food as it has cells in its body, it will attempt to reproduce. 
-First, offspring is formed by cloning the current organism and possibly mutating it.
-The offspring birth location is then chosen 2 + (number of cells) in a random direction (up, down, left, right). This ensures it will not be intersecting with its parent.
-Additionally, a random value between 1 and 3 is added to the location so they are not always failing to reproduce due to intersections.
-Finally, the distance between the parent and offspring maxes out at 30 cells.
-If reproduction fails, the food required to produce a child is wasted.
+## Build and train the C++ core
 
-## Mutation
-Offspring can mutate in 3 different ways: lose a cell, change a cell type, or add a cell. Losing and changing are pretty self explanatory, but adding is a little more complex.
-The organism first selects a cell it already has in its body, then randomly grows a cell connected to that original branch cell.
+With CMake and a C++17 compiler:
 
-## Food Production and Lifespan Multiplier
-To stablize ecosystems, I set up a simple equation to handle the relationship between how likely an organism is to produce food and how much time it has to do so.
-Essentially, the equation makes it so that for an organism of any given size, a single producer cell will produce as much food as cells in the organisms body. 
-For example, if an organism has 5 cells, it will live long enough so that a single producer cell will (on average) produce 5 food. This works if assuming the organism eats all 
-of the food and successfully reproduces. However, this assumtion is very often not the case, and for this reason I added a scalar value to make food production more probable.
-This is the final equation:
+~~~sh
+cmake -S cpp -B build/cpp -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+cmake --build build/cpp --config Release
+ctest --test-dir build/cpp -C Release --output-on-failure
+npm run train
+~~~
 
-```
-p = probability of producing food (0 - 100)
-l = lifespan multiplier (how many ticks per cell an organism is given)
-x = scalar
+The trainer uses supervised backpropagation in native C++ to teach the seed NNUE to select the direction of nearby food. On this repository's verification set it reaches 24/24 directional decisions. Evolution then clones and mutates those weights independently for each organism.
 
-p/100 = x/l
-```
+## WebAssembly
 
+The C++ core exposes a small C ABI in cpp/src/wasm_api.cpp. Configure the same CMake project with Emscripten to produce the browser module:
 
+~~~sh
+emcmake cmake -S cpp -B build/wasm -DCMAKE_BUILD_TYPE=Release
+cmake --build build/wasm --config Release
+~~~
 
-# Building and Playing
-Requirements to edit and build:
-- npm
-- webpack
+Emscripten is optional for development because the TypeScript engine is a typed-array fallback and consumes the same C++-trained brain format. Native C++ remains the source for model training and performance benchmarks.
 
-## Playing
-Included in this repo is an already built version of the game. You can play it simply by opening `index.html` in your browser.
+## Neural inputs
 
-## Building
-If you want to change the source code and then play, use any of the following commands to build the project:
-To build minified: `npm run build`
-To build in dev mode: `npm run build-dev`
-To build in dev/watch mode: `npm run build-watch`
-You can then open `index.html` in your browser.
+Each NNUE receives a sparse 5x5 neighborhood encoded as one active feature per square:
+
+- empty space
+- food
+- walls
+- its own body
+- other organisms
+- map boundaries
+
+Two additional one-hot pairs encode hunger/reproduction readiness and damage. Outputs represent up, down, left, right, and wait. Only changed features update the hidden accumulator.
+
+## Cell palette
+
+The ecosystem deliberately stays within the red family: pale rose food and producers, coral mouths, vivid red movers, deep-red killers, crimson armor, oxblood walls, and a near-black world.

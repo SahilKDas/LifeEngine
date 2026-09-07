@@ -1,0 +1,75 @@
+#include "life/life_core.hpp"
+#include <algorithm>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <random>
+#include <string>
+
+static std::vector<int> sample(int food_square) {
+  std::vector<int> features;
+  for (int square = 0; square < 24; ++square) features.push_back(square * 6 + (square == food_square ? 1 : 0));
+  features.push_back(144); features.push_back(146);
+  return features;
+}
+
+static int target_for(int square) {
+  int cursor = 0;
+  for (int y = -2; y <= 2; ++y) for (int x = -2; x <= 2; ++x) {
+    if (!x && !y) continue;
+    if (cursor++ != square) continue;
+    return std::abs(x) > std::abs(y) ? (x < 0 ? 2 : 3) : (y < 0 ? 0 : 1);
+  }
+  return 4;
+}
+
+template <class Values> static void vector_json(std::ostream& out, const Values& values) {
+  out << '[';
+  for (size_t i = 0; i < values.size(); ++i) { if (i) out << ','; out << values[i]; }
+  out << ']';
+}
+
+int main(int argc, char** argv) {
+  const std::string output = argc > 1 ? argv[1] : "trained-brain.json";
+  life::Nnue brain(0xC0FFEE);
+  std::mt19937 random(42);
+  std::uniform_int_distribution<int> food(0, 23);
+  for (int epoch = 0; epoch < 400; ++epoch)
+    for (int batch = 0; batch < 96; ++batch) {
+      const int square = food(random);
+      brain.train(sample(square), target_for(square), 0.008f);
+    }
+  int correct = 0;
+  for (int square = 0; square < 24; ++square) {
+    const auto result = brain.evaluate(sample(square));
+    correct += int(std::max_element(result.begin(), result.end()) - result.begin()) == target_for(square);
+  }
+  const std::filesystem::path output_path(output);
+  if (!output_path.parent_path().empty()) std::filesystem::create_directories(output_path.parent_path());
+  std::ofstream out(output_path);
+  if (!out) {
+    std::cerr << "unable to write " << output << '\n';
+    return 2;
+  }
+  out << "{\"inputWeights\":[";
+  const auto& input = brain.input_weights();
+  for (int feature = 0; feature < life::kInput; ++feature) {
+    if (feature) out << ','; out << '[';
+    for (int hidden = 0; hidden < life::kHidden; ++hidden) {
+      if (hidden) out << ','; out << input[feature * life::kHidden + hidden];
+    }
+    out << ']';
+  }
+  out << "],\"hiddenBias\":"; vector_json(out, brain.hidden_bias());
+  out << ",\"outputWeights\":[";
+  for (int action = 0; action < life::kOutput; ++action) {
+    if (action) out << ','; out << '[';
+    for (int hidden = 0; hidden < life::kHidden; ++hidden) {
+      if (hidden) out << ','; out << brain.output_weights()[action * life::kHidden + hidden];
+    }
+    out << ']';
+  }
+  out << "],\"outputBias\":"; vector_json(out, brain.output_bias()); out << "}\n";
+  std::cout << "trained food-seeking policy: " << correct << "/24, wrote " << output << '\n';
+  return correct >= 20 ? 0 : 1;
+}

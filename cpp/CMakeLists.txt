@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.20)
+project(life_engine_core LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_library(life_core src/life_core.cpp)
+target_include_directories(life_core PUBLIC include)
+target_compile_options(life_core PRIVATE -O3)
+add_executable(life_train src/train.cpp)
+target_link_libraries(life_train PRIVATE life_core)
+add_executable(life_core_tests tests/core_tests.cpp)
+target_link_libraries(life_core_tests PRIVATE life_core)
+enable_testing()
+add_test(NAME life_core_tests COMMAND life_core_tests)
+if(EMSCRIPTEN)
+  add_executable(life_core_wasm src/wasm_api.cpp)
+  target_link_libraries(life_core_wasm PRIVATE life_core)
+  target_link_options(life_core_wasm PRIVATE
+    "-sEXPORTED_FUNCTIONS=['_life_create','_life_destroy','_life_step','_life_cells','_life_width','_life_height']"
+    "-sEXPORTED_RUNTIME_METHODS=[]" "-sALLOW_MEMORY_GROWTH=1" "-sMODULARIZE=1"
+    "-sEXPORT_ES6=1" "-sENVIRONMENT=web")
+  set_target_properties(life_core_wasm PROPERTIES OUTPUT_NAME "life_core" SUFFIX ".js")
+endif()
