@@ -1,5 +1,5 @@
 export const SENSOR_RADIUS = 2;
-export const FEATURE_CATEGORIES = 6;
+export const FEATURE_CATEGORIES = 7;
 export const HIDDEN_SIZE = 16;
 export const OUTPUT_SIZE = 5;
 export const POSITION_COUNT = 24;

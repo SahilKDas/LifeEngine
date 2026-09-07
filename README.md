@@ -61,7 +61,9 @@ Each NNUE receives a sparse 5x5 neighborhood encoded as one active feature per s
 - other organisms
 - map boundaries
 
-Two additional one-hot pairs encode hunger/reproduction readiness and damage. Outputs represent up, down, left, right, and wait. Only changed features update the hidden accumulator.
+Killer cells have their own danger feature rather than being grouped with ordinary organisms. Two additional one-hot pairs encode hunger/reproduction readiness and damage. Outputs represent up, down, left, right, and wait. Only changed features update the hidden accumulator.
+
+NNUEs exist only on organisms containing a mover cell. Static organisms use the original Life Engine rules without allocating or evaluating a neural network. The founding organism is the original three-cell body: one central mouth and two diagonal producers.
 
 ## Cell palette
 

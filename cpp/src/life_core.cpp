@@ -59,7 +59,7 @@ void Nnue::mutate(float probability, float magnitude, std::mt19937& random) {
 World::World(int width, int height, uint32_t seed)
     : width_(width), height_(height), cells_(width * height), random_(seed) {
   agents_.push_back({width / 2, height / 2, 0, 0, Nnue(seed)});
-  cells_[index(width / 2, height / 2)] = 6;
+  cells_[index(width / 2, height / 2)] = 5;
 }
 
 std::vector<int> World::features(const Agent& agent) const {
@@ -67,10 +67,10 @@ std::vector<int> World::features(const Agent& agent) const {
   for (int dy = -2; dy <= 2; ++dy) for (int dx = -2; dx <= 2; ++dx) {
     if (!dx && !dy) continue;
     const int x = agent.x + dx, y = agent.y + dy;
-    int category = !valid(x, y) ? 5 : cells_[index(x, y)] == 1 ? 1 : cells_[index(x, y)] == 2 ? 2 : cells_[index(x, y)] >= 3 ? 4 : 0;
-    result.push_back(square++ * 6 + category);
+    int category = !valid(x, y) ? 6 : cells_[index(x, y)] == 1 ? 1 : cells_[index(x, y)] == 2 ? 2 : cells_[index(x, y)] == 6 ? 5 : cells_[index(x, y)] >= 3 ? 4 : 0;
+    result.push_back(square++ * 7 + category);
   }
-  result.push_back(144); result.push_back(146);
+  result.push_back(168); result.push_back(170);
   return result;
 }
 

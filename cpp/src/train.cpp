@@ -6,10 +6,13 @@
 #include <random>
 #include <string>
 
-static std::vector<int> sample(int food_square) {
+static std::vector<int> sample(int food_square, int killer_square = -1) {
   std::vector<int> features;
-  for (int square = 0; square < 24; ++square) features.push_back(square * 6 + (square == food_square ? 1 : 0));
-  features.push_back(144); features.push_back(146);
+  for (int square = 0; square < 24; ++square) {
+    const int category = square == food_square ? 1 : square == killer_square ? 5 : 0;
+    features.push_back(square * 7 + category);
+  }
+  features.push_back(168); features.push_back(170);
   return features;
 }
 
@@ -23,6 +26,14 @@ static int target_for(int square) {
   return 4;
 }
 
+static int escape_target_for(int square) {
+  const int toward = target_for(square);
+  if (toward == 0) return 1;
+  if (toward == 1) return 0;
+  if (toward == 2) return 3;
+  return 2;
+}
+
 template <class Values> static void vector_json(std::ostream& out, const Values& values) {
   out << '[';
   for (size_t i = 0; i < values.size(); ++i) { if (i) out << ','; out << values[i]; }
@@ -34,15 +45,24 @@ int main(int argc, char** argv) {
   life::Nnue brain(0xC0FFEE);
   std::mt19937 random(42);
   std::uniform_int_distribution<int> food(0, 23);
-  for (int epoch = 0; epoch < 400; ++epoch)
+  for (int epoch = 0; epoch < 500; ++epoch)
     for (int batch = 0; batch < 96; ++batch) {
       const int square = food(random);
       brain.train(sample(square), target_for(square), 0.008f);
+      int killer = food(random);
+      brain.train(sample(-1, killer), escape_target_for(killer), 0.008f);
+      while (killer == square) killer = food(random);
+      brain.train(sample(square, killer), escape_target_for(killer), 0.008f);
     }
-  int correct = 0;
+  int food_correct = 0, escape_correct = 0, mixed_correct = 0;
   for (int square = 0; square < 24; ++square) {
-    const auto result = brain.evaluate(sample(square));
-    correct += int(std::max_element(result.begin(), result.end()) - result.begin()) == target_for(square);
+    auto result = brain.evaluate(sample(square));
+    food_correct += int(std::max_element(result.begin(), result.end()) - result.begin()) == target_for(square);
+    result = brain.evaluate(sample(-1, square));
+    escape_correct += int(std::max_element(result.begin(), result.end()) - result.begin()) == escape_target_for(square);
+    const int food_square = (square + 12) % 24;
+    result = brain.evaluate(sample(food_square, square));
+    mixed_correct += int(std::max_element(result.begin(), result.end()) - result.begin()) == escape_target_for(square);
   }
   const std::filesystem::path output_path(output);
   if (!output_path.parent_path().empty()) std::filesystem::create_directories(output_path.parent_path());
@@ -70,6 +90,8 @@ int main(int argc, char** argv) {
     out << ']';
   }
   out << "],\"outputBias\":"; vector_json(out, brain.output_bias()); out << "}\n";
-  std::cout << "trained food-seeking policy: " << correct << "/24, wrote " << output << '\n';
-  return correct >= 20 ? 0 : 1;
+  std::cout << "trained policy: food " << food_correct << "/24, killer avoidance "
+            << escape_correct << "/24, mixed-scene avoidance " << mixed_correct
+            << "/24, wrote " << output << '\n';
+  return food_correct >= 20 && escape_correct >= 20 && mixed_correct >= 20 ? 0 : 1;
 }

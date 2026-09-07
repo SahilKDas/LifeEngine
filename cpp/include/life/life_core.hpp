@@ -5,7 +5,7 @@
 #include <vector>
 
 namespace life {
-constexpr int kInput = 148, kHidden = 16, kOutput = 5;
+constexpr int kInput = 172, kHidden = 16, kOutput = 5;
 
 class Nnue {
  public:
