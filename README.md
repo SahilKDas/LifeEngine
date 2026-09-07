@@ -65,6 +65,17 @@ Killer cells have their own danger feature rather than being grouped with ordina
 
 NNUEs exist only on organisms containing a mover cell. Static organisms use the original Life Engine rules without allocating or evaluating a neural network. The founding organism is the original three-cell body: one central mouth and two diagonal producers.
 
+## Learned flocking and neural evolution
+
+Flocking is not implemented with Boids rules or movement overrides. The NNUE input identifies nearby mover organisms and their headings, plus the current organism's own heading. Native C++ training teaches two examples through the network weights:
+
+- move toward more distant movers (cohesion)
+- match the heading of close movers (alignment)
+
+The same policy continues to seek food and treats killer avoidance as higher priority in mixed scenes. The trainer's verification set currently scores 24/24 food seeking, 24/24 killer avoidance, 24/24 mixed-scene avoidance, and 96/96 flocking decisions.
+
+Mover offspring deep-copy their parent's NNUE. Neural mutation occurs independently from body mutation using a heritable, self-mutating neural mutation rate, so successful movement strategies spread through normal reproduction while new strategies continue to emerge. There is no explicit fitness function in the live ecosystem: survival and reproductive success remain the selection pressure.
+
 ## Cell palette
 
 The original cell colors are preserved: green food, orange mouths, white producers, blue movers, red killers, purple armor, gray walls, and a dark-blue world.

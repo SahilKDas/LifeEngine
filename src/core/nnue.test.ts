@@ -16,6 +16,13 @@ describe("Nnue", () => {
     expect(child.toSeed()).toEqual(parent.toSeed());
   });
 
+  it("can evolve an inherited brain independently of its parent", () => {
+    const parent = new Nnue();
+    const child = parent.clone();
+    child.mutate(1, 0.1);
+    expect(child.toSeed()).not.toEqual(parent.toSeed());
+  });
+
   it("has the expected compact topology", () => {
     const seed = new Nnue().toSeed();
     expect(seed.hiddenBias).toHaveLength(HIDDEN_SIZE);

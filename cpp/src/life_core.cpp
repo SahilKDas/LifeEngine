@@ -68,9 +68,9 @@ std::vector<int> World::features(const Agent& agent) const {
     if (!dx && !dy) continue;
     const int x = agent.x + dx, y = agent.y + dy;
     int category = !valid(x, y) ? 6 : cells_[index(x, y)] == 1 ? 1 : cells_[index(x, y)] == 2 ? 2 : cells_[index(x, y)] == 6 ? 5 : cells_[index(x, y)] >= 3 ? 4 : 0;
-    result.push_back(square++ * 7 + category);
+    result.push_back(square++ * 11 + category);
   }
-  result.push_back(168); result.push_back(170);
+  result.push_back(264); result.push_back(266); result.push_back(268);
   return result;
 }
 

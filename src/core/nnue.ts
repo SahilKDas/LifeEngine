@@ -1,9 +1,9 @@
 export const SENSOR_RADIUS = 2;
-export const FEATURE_CATEGORIES = 7;
+export const FEATURE_CATEGORIES = 11;
 export const HIDDEN_SIZE = 16;
 export const OUTPUT_SIZE = 5;
 export const POSITION_COUNT = 24;
-export const INPUT_SIZE = POSITION_COUNT * FEATURE_CATEGORIES + 4;
+export const INPUT_SIZE = POSITION_COUNT * FEATURE_CATEGORIES + 8;
 
 export interface BrainSeed {
   inputWeights: number[][];

@@ -13,6 +13,7 @@ interface Organism {
   lifetime: number;
   damage: number;
   mutability: number;
+  neuralMutability: number;
   birthDistance: number;
   moveRange: number;
   moveCount: number;
@@ -115,6 +116,7 @@ export class Simulation {
         brain: parent.brain?.clone(),
         food: 0, lifetime: 0, damage: 0,
         mutability: parent.mutability,
+        neuralMutability: parent.neuralMutability,
         birthDistance: parent.birthDistance,
         moveRange: parent.moveRange,
         moveCount: 0,
@@ -128,7 +130,7 @@ export class Simulation {
     return {
       id: this.nextId++, x, y, cells: [],
       food: 0, lifetime: 0, damage: 0,
-      mutability: 5, birthDistance: 4, moveRange: 4, moveCount: 0,
+      mutability: 5, neuralMutability: 8, birthDistance: 4, moveRange: 4, moveCount: 0,
       direction: Direction.Up, rotation: Direction.Up,
       living: true, isProducer: false, isMover: false,
     };
@@ -162,6 +164,13 @@ export class Simulation {
     child.mutability += Math.random() <= 0.5 ? 1 : -1;
     child.mutability = Math.max(1, child.mutability);
     if (Math.random() * 100 <= parent.mutability) this.mutate(child);
+    if (child.isMover && child.brain && Math.random() * 100 <= child.neuralMutability) {
+      child.brain.mutate();
+    }
+    if (Math.random() < 0.1) {
+      child.neuralMutability = Math.min(50, Math.max(0.5,
+        child.neuralMutability + (Math.random() < 0.5 ? -0.5 : 0.5)));
+    }
     const direction = DIRECTIONS[Math.floor(Math.random() * 4)]!;
     const offset = Math.floor(Math.random() * 3);
     child.x = parent.x + direction[0] * (parent.birthDistance + offset);
@@ -190,7 +199,6 @@ export class Simulation {
     if (Math.random() * 100 <= 10) organism.birthDistance = Math.max(1, organism.birthDistance + Math.floor(Math.random() * 5) - 2);
     if (organism.isMover) {
       organism.brain ??= new Nnue(this.seed);
-      organism.brain.mutate();
     } else {
       organism.brain = undefined;
     }
@@ -302,7 +310,11 @@ export class Simulation {
       if (index >= 0) {
         const type = this.cells[index] as CellType;
         const owner = this.owners[index] ?? -1;
-        category = owner === organism.id ? 3 : type === CellType.Killer ? 5 : owner >= 0 ? 4 :
+        const neighbor = owner >= 0 && owner !== organism.id
+          ? this.organisms.find((candidate) => candidate.id === owner)
+          : undefined;
+        category = owner === organism.id ? 3 : type === CellType.Killer ? 5 :
+          neighbor?.isMover ? 7 + neighbor.direction : owner >= 0 ? 4 :
           type === CellType.Food ? 1 : type === CellType.Wall ? 2 : 0;
       }
       features.push(square++ * FEATURE_CATEGORIES + category);
@@ -310,6 +322,7 @@ export class Simulation {
     const state = POSITION_COUNT * FEATURE_CATEGORIES;
     features.push(state + (organism.food >= organism.cells.length ? 1 : 0));
     features.push(state + 2 + (organism.damage > 0 ? 1 : 0));
+    features.push(state + 4 + organism.direction);
     return features;
   }
 
