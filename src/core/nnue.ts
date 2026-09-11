@@ -12,7 +12,7 @@ export interface BrainSeed {
   outputBias: number[];
 }
 
-const randomWeight = (scale: number): number => (Math.random() * 2 - 1) * scale;
+const randomWeight = (scale: number, random = Math.random): number => (random() * 2 - 1) * scale;
 
 export class Nnue {
   readonly inputWeights: Float32Array[];
@@ -22,15 +22,15 @@ export class Nnue {
   private accumulator: Float32Array;
   private active = new Set<number>();
 
-  constructor(seed?: BrainSeed) {
+  constructor(seed?: BrainSeed, random = Math.random) {
     this.inputWeights = seed
       ? seed.inputWeights.map((row) => Float32Array.from(row))
-      : Array.from({ length: INPUT_SIZE }, () => Float32Array.from({ length: HIDDEN_SIZE }, () => randomWeight(0.12)));
-    this.hiddenBias = seed ? Float32Array.from(seed.hiddenBias) : Float32Array.from({ length: HIDDEN_SIZE }, () => randomWeight(0.05));
+      : Array.from({ length: INPUT_SIZE }, () => Float32Array.from({ length: HIDDEN_SIZE }, () => randomWeight(0.12, random)));
+    this.hiddenBias = seed ? Float32Array.from(seed.hiddenBias) : Float32Array.from({ length: HIDDEN_SIZE }, () => randomWeight(0.05, random));
     this.outputWeights = seed
       ? seed.outputWeights.map((row) => Float32Array.from(row))
-      : Array.from({ length: OUTPUT_SIZE }, () => Float32Array.from({ length: HIDDEN_SIZE }, () => randomWeight(0.18)));
-    this.outputBias = seed ? Float32Array.from(seed.outputBias) : Float32Array.from({ length: OUTPUT_SIZE }, () => randomWeight(0.05));
+      : Array.from({ length: OUTPUT_SIZE }, () => Float32Array.from({ length: HIDDEN_SIZE }, () => randomWeight(0.18, random)));
+    this.outputBias = seed ? Float32Array.from(seed.outputBias) : Float32Array.from({ length: OUTPUT_SIZE }, () => randomWeight(0.05, random));
     this.accumulator = new Float32Array(this.hiddenBias);
   }
 
@@ -68,6 +68,35 @@ export class Nnue {
     let best = 0;
     for (let i = 1; i < output.length; i++) if (output[i]! > output[best]!) best = i;
     return best;
+  }
+
+  train(features: readonly number[], target: number, rate: number): void {
+    const scores = this.evaluate(features);
+    const maximum = Math.max(...scores);
+    const probabilities = Array.from(scores, (score) => Math.exp(score - maximum));
+    const total = probabilities.reduce((sum, value) => sum + value, 0);
+    const hiddenGradient = new Float32Array(HIDDEN_SIZE);
+
+    for (let output = 0; output < OUTPUT_SIZE; output++) {
+      const gradient = (probabilities[output] ?? 0) / total - (output === target ? 1 : 0);
+      const row = this.outputWeights[output]!;
+      for (let hidden = 0; hidden < HIDDEN_SIZE; hidden++) {
+        hiddenGradient[hidden] = (hiddenGradient[hidden] ?? 0) + gradient * (row[hidden] ?? 0);
+        row[hidden] = (row[hidden] ?? 0) - rate * gradient * Math.max(0, this.accumulator[hidden] ?? 0);
+      }
+      this.outputBias[output] = (this.outputBias[output] ?? 0) - rate * gradient;
+    }
+
+    for (let hidden = 0; hidden < HIDDEN_SIZE; hidden++) {
+      if ((this.accumulator[hidden] ?? 0) <= 0) continue;
+      const gradient = hiddenGradient[hidden] ?? 0;
+      this.hiddenBias[hidden] = (this.hiddenBias[hidden] ?? 0) - rate * gradient;
+      for (const feature of features) {
+        const row = this.inputWeights[feature];
+        if (row) row[hidden] = (row[hidden] ?? 0) - rate * gradient;
+      }
+    }
+    this.reset();
   }
 
   mutate(probability = 0.03, magnitude = 0.2): void {

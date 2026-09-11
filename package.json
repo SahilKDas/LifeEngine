@@ -9,13 +9,12 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "cpp:configure": "cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release",
-    "cpp:build": "cmake --build build/cpp --config Release",
-    "cpp:test": "ctest --test-dir build/cpp -C Release --output-on-failure",
-    "train": "build\\cpp\\life_train.exe public\\trained-brain.json"
+    "train": "tsx scripts/train.ts",
+    "verify": "npm run test && npm run train && npm run build"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "tsx": "^4.20.5",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"

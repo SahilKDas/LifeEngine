@@ -22,7 +22,7 @@ app.innerHTML = `
     </section>
     <aside>
       <section class="panel hero-panel">
-        <p class="label">CORE</p><h2>C++ speed.<br><span>Neural instinct.</span></h2>
+        <p class="label">CORE</p><h2>Sparse speed.<br><span>Neural instinct.</span></h2>
         <p>Sparse NNUE brains inherit, mutate, and learn movement strategies under natural selection.</p>
       </section>
       <section class="metrics">
@@ -46,7 +46,7 @@ app.innerHTML = `
         </div>
         <p>Paint directly on the ecosystem. Painting over an organism removes it.</p>
       </section>
-      <footer><span id="core-state">TypeScript fallback</span><span id="ticks">0 ticks</span></footer>
+      <footer><span id="core-state">TypeScript NNUE</span><span id="ticks">0 ticks</span></footer>
     </aside>
   </main>`;
 
